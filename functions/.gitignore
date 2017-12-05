@@ -1,0 +1,6 @@
+node_modules/
+jspm_packages/
+
+## ignore generated JavaScript files
+functions/**/*.js
+functions/**/*.js.map
