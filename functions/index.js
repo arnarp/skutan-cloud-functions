@@ -22,4 +22,5 @@ exports.onClaimWrite = functions.firestore.document('users/{uid}').onWrite(funct
     console.log(user.claims);
     return admin.auth().setCustomUserClaims(event.params.uid, user.claims);
 });
+exports.test = functions.https.onRequest(function (req) { return 'hello'; });
 //# sourceMappingURL=index.js.map
