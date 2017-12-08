@@ -12,10 +12,12 @@
   },
   "dependencies": {
     "firebase-admin": "~5.4.2",
-    "firebase-functions": "^0.7.1"
+    "firebase-functions": "^0.7.1",
+    "nodemailer": "^4.4.0"
   },
   "private": true,
   "devDependencies": {
+    "@types/nodemailer": "^4.3.1",
     "typescript": "^2.6.1"
   }
 }

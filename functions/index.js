@@ -2,6 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 var functions = require("firebase-functions");
 var admin = require("firebase-admin");
+var sendInvitationEmail_1 = require("./sendInvitationEmail");
 admin.initializeApp(functions.config().firebase);
 // Create and Deploy Your First Cloud Functions
 // https://firebase.google.com/docs/functions/write-firebase-functions
@@ -23,4 +24,5 @@ exports.onClaimWrite = functions.firestore.document('users/{uid}').onWrite(funct
     return admin.auth().setCustomUserClaims(event.params.uid, user.claims);
 });
 exports.test = functions.https.onRequest(function (req) { return 'hello'; });
+exports.sendInvitationEmail = sendInvitationEmail_1.sendInvitation;
 //# sourceMappingURL=index.js.map

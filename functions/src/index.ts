@@ -1,5 +1,6 @@
 import * as functions from 'firebase-functions'
 import * as admin from 'firebase-admin'
+import { sendInvitation } from './sendInvitationEmail';
 admin.initializeApp(functions.config().firebase);
 // Create and Deploy Your First Cloud Functions
 // https://firebase.google.com/docs/functions/write-firebase-functions
@@ -25,3 +26,5 @@ exports.onClaimWrite = functions.firestore.document('users/{uid}').onWrite(event
 })
 
 exports.test = functions.https.onRequest(req => 'hello')
+
+exports.sendInvitationEmail = sendInvitation
