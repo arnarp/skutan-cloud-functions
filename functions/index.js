@@ -3,9 +3,8 @@ Object.defineProperty(exports, "__esModule", { value: true });
 var functions = require("firebase-functions");
 var admin = require("firebase-admin");
 var sendInvitationEmail_1 = require("./sendInvitationEmail");
+var firebase_admin_1 = require("firebase-admin");
 admin.initializeApp(functions.config().firebase);
-// Create and Deploy Your First Cloud Functions
-// https://firebase.google.com/docs/functions/write-firebase-functions
 exports.onUserCreation = functions.auth.user().onCreate(function (event) {
     var user = event.data;
     var userObject = {
@@ -23,6 +22,20 @@ exports.onClaimWrite = functions.firestore.document('users/{uid}').onWrite(funct
     console.log(user.claims);
     return admin.auth().setCustomUserClaims(event.params.uid, user.claims);
 });
-exports.test = functions.https.onRequest(function (req) { return 'hello'; });
+exports.getCustomerInvite = functions.https.onRequest(function (req, res) {
+    var inviteId = req.query.id;
+    if (inviteId === undefined) {
+        return res.sendStatus(400 /* BadRequest */);
+    }
+    return firebase_admin_1.firestore().collection('customerInvites').doc(inviteId).get().then(function (doc) {
+        if (!doc.exists) {
+            return res.sendStatus(404 /* NotFound */);
+        }
+        return res.json(doc.data());
+    }).catch(function (error) {
+        console.log(error);
+        return res.sendStatus(500 /* InternalServerError */);
+    });
+});
 exports.sendInvitationEmail = sendInvitationEmail_1.sendInvitation;
 //# sourceMappingURL=index.js.map

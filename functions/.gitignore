@@ -1,5 +1,5 @@
 node_modules/
 jspm_packages/
 build/
-*.js
-*.js.map
+**/*.js
+**/*.js.map
