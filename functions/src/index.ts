@@ -3,9 +3,11 @@ import * as admin from 'firebase-admin'
 import { sendInvitation } from './sendInvitationEmail';
 import { firestore } from 'firebase-admin';
 import { error } from 'util';
+import * as cors from 'cors'
+
 admin.initializeApp(functions.config().firebase);
-// Create and Deploy Your First Cloud Functions
-// https://firebase.google.com/docs/functions/write-firebase-functions
+
+const corsMiddleware = cors({origin: true})
 
 
 const enum StatusCode {
@@ -34,18 +36,20 @@ exports.onClaimWrite = functions.firestore.document('users/{uid}').onWrite(event
 })
 
 exports.getCustomerInvite = functions.https.onRequest((req, res) => {
-  const inviteId: string | undefined = req.query.id
-  if (inviteId === undefined) {
-    return res.sendStatus(StatusCode.BadRequest)
-  }
-  return firestore().collection('customerInvites').doc(inviteId).get().then(doc => {
-    if (!doc.exists) {
-      return res.sendStatus(StatusCode.NotFound)
+  return corsMiddleware(req, res, () => {
+    const inviteId: string | undefined = req.query.id
+    if (inviteId === undefined) {
+      return res.sendStatus(StatusCode.BadRequest)
     }
-    return res.json(doc.data())
-  }).catch(error => {
-    console.log(error)
-    return res.sendStatus(StatusCode.InternalServerError)
+    return firestore().collection('customerInvites').doc(inviteId).get().then(doc => {
+      if (!doc.exists) {
+        return res.sendStatus(StatusCode.NotFound)
+      }
+      return res.json(doc.data())
+    }).catch(error => {
+      console.log(error)
+      return res.sendStatus(StatusCode.InternalServerError)
+    })
   })
 })
 
