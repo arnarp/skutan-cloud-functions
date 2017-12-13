@@ -27,7 +27,7 @@ exports.onClaimWrite = functions.firestore.document('users/{uid}').onWrite(funct
 exports.getCustomerInvite = functions.https.onRequest(function (req, res) {
     return corsMiddleware(req, res, function () {
         var inviteId = req.query.id;
-        if (inviteId === undefined) {
+        if (req.method !== 'GET' || inviteId === undefined) {
             return res.sendStatus(400 /* BadRequest */);
         }
         return firebase_admin_1.firestore().collection('customerInvites').doc(inviteId).get().then(function (doc) {
@@ -38,6 +38,56 @@ exports.getCustomerInvite = functions.https.onRequest(function (req, res) {
         }).catch(function (error) {
             console.log(error);
             return res.sendStatus(500 /* InternalServerError */);
+        });
+    });
+});
+exports.acceptCustomerInvite = functions.https.onRequest(function (req, res) {
+    return corsMiddleware(req, res, function () {
+        var inviteId = req.query.id;
+        var uid = req.query.uid;
+        if (req.method !== 'POST' || inviteId === undefined || uid === undefined) {
+            return res.sendStatus(400 /* BadRequest */);
+        }
+        return Promise.all([
+            firebase_admin_1.firestore().collection('customerInvites').doc(inviteId).get(),
+            firebase_admin_1.firestore().collection('users').doc(uid).get()
+        ])
+            .then(function (res) {
+            var inviteDoc = res[0], userDoc = res[1];
+            if (!inviteDoc.exists || !userDoc.exists) {
+                throw new Error('Not found');
+            }
+            return { inviteDoc: inviteDoc, userDoc: userDoc };
+        })
+            .then(function (res) {
+            var invitation = res.inviteDoc.data();
+            var user = res.userDoc.data();
+            var batch = firebase_admin_1.firestore().batch();
+            batch.update(firebase_admin_1.firestore().collection('users').doc(uid), (_a = {},
+                _a["claims.customer." + invitation.customerId] = {
+                    role: invitation.role,
+                    name: invitation.customerName,
+                },
+                _a));
+            batch.update(res.inviteDoc.ref, {
+                usedBy: {
+                    uid: uid, userDisplayName: user.displayName
+                }
+            });
+            return batch.commit();
+            var _a;
+        })
+            .then(function (value) {
+            return res.sendStatus(200 /* Ok */);
+        })
+            .catch(function (error) {
+            console.log(error);
+            if (error.message === 'Not found') {
+                res.sendStatus(404 /* NotFound */);
+            }
+            else {
+                return res.sendStatus(500 /* InternalServerError */);
+            }
         });
     });
 });

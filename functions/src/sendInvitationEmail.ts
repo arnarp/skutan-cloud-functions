@@ -15,7 +15,7 @@ const mailTransport = nodemailer.createTransport({
 
 const APP_NAME = 'Veislulist'
 
-export const sendInvitation = functions.firestore.document('customerInvites/{id}').onWrite(event => {
+export const sendInvitation = functions.firestore.document('customerInvites/{id}').onCreate(event => {
   const data = event.data.data()
   const email = data.email
   const customerId = data.customerId
