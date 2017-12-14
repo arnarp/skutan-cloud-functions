@@ -9,7 +9,6 @@ admin.initializeApp(functions.config().firebase);
 
 const corsMiddleware = cors({origin: true})
 
-
 const enum StatusCode {
   Ok = 200,
   BadRequest = 400,
@@ -23,17 +22,16 @@ exports.onUserCreation = functions.auth.user().onCreate(event => {
     displayName: user.displayName,
     email: user.email,
     photoURL: user.photoURL,
-    claims: {}
   }
   return admin.database().ref(`/users/${user.uid}`).set(userObject).then(() => {
     return admin.firestore().collection('users').doc(user.uid).set(userObject)
   })
 })
 
-exports.onClaimWrite = functions.firestore.document('users/{uid}').onWrite(event => {
-  const user = event.data.data()
-  console.log(user.claims)
-  return admin.auth().setCustomUserClaims(event.params.uid, user.claims)
+exports.onClaimWrite = functions.firestore.document('userClaims/{uid}').onWrite(event => {
+  const claims = event.data.data()
+  console.log(claims)
+  return admin.auth().setCustomUserClaims(event.params.uid, claims)
 })
 
 exports.getCustomerInvite = functions.https.onRequest((req, res) => {
@@ -75,15 +73,18 @@ exports.acceptCustomerInvite = functions.https.onRequest((req, res) => {
       const invitation = res.inviteDoc.data()
       const user = res.userDoc.data()
       const batch = firestore().batch()
-      batch.update(firestore().collection('users').doc(uid), {
-        [`claims.customer.${invitation.customerId}`]: {
+      batch.set(firestore().collection('userClaims').doc(uid), {
+        [`customer.${invitation.customerId}`]: {
           role: invitation.role,
           name: invitation.customerName, 
-        }})
+        }}, { merge: true })
       batch.update(res.inviteDoc.ref, {
         usedBy: {
           uid, userDisplayName: user.displayName
         }
+      })
+      batch.update(res.userDoc.ref, {
+        customerId: invitation.customerId
       })
       return batch.commit()
     })

@@ -13,16 +13,15 @@ exports.onUserCreation = functions.auth.user().onCreate(function (event) {
         displayName: user.displayName,
         email: user.email,
         photoURL: user.photoURL,
-        claims: {}
     };
     return admin.database().ref("/users/" + user.uid).set(userObject).then(function () {
         return admin.firestore().collection('users').doc(user.uid).set(userObject);
     });
 });
-exports.onClaimWrite = functions.firestore.document('users/{uid}').onWrite(function (event) {
-    var user = event.data.data();
-    console.log(user.claims);
-    return admin.auth().setCustomUserClaims(event.params.uid, user.claims);
+exports.onClaimWrite = functions.firestore.document('userClaims/{uid}').onWrite(function (event) {
+    var claims = event.data.data();
+    console.log(claims);
+    return admin.auth().setCustomUserClaims(event.params.uid, claims);
 });
 exports.getCustomerInvite = functions.https.onRequest(function (req, res) {
     return corsMiddleware(req, res, function () {
@@ -63,16 +62,19 @@ exports.acceptCustomerInvite = functions.https.onRequest(function (req, res) {
             var invitation = res.inviteDoc.data();
             var user = res.userDoc.data();
             var batch = firebase_admin_1.firestore().batch();
-            batch.update(firebase_admin_1.firestore().collection('users').doc(uid), (_a = {},
-                _a["claims.customer." + invitation.customerId] = {
+            batch.set(firebase_admin_1.firestore().collection('userClaims').doc(uid), (_a = {},
+                _a["customer." + invitation.customerId] = {
                     role: invitation.role,
                     name: invitation.customerName,
                 },
-                _a));
+                _a), { merge: true });
             batch.update(res.inviteDoc.ref, {
                 usedBy: {
                     uid: uid, userDisplayName: user.displayName
                 }
+            });
+            batch.update(res.userDoc.ref, {
+                customerId: invitation.customerId
             });
             return batch.commit();
             var _a;
