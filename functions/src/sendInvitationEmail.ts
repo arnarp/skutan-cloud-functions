@@ -31,7 +31,7 @@ export const sendInvitation = functions.firestore.document('customerInvites/{id}
          subject: 'Boð í Netpöntun Veislulist',
          html: invitationEmail
          .replace(/{{customerName}}/g, customer.name)
-         .replace(/{{url}}/g, `http://localhost:3001/customerInvitations/${event.params.id}`)
+         .replace(/{{url}}/g, `https://skutan-netpontun-web.firebaseapp.com/customerInvite/${event.params.id}`)
         }
         return mailTransport.sendMail(mailOptions)
     }).then(() => {
