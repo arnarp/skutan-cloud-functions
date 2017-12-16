@@ -4,6 +4,7 @@ import { sendInvitation } from './sendInvitationEmail';
 import { firestore } from 'firebase-admin';
 import { error } from 'util';
 import * as cors from 'cors'
+import { UserClaims, CustomerInvitation, Omit, UserRecord } from './model';
 
 admin.initializeApp(functions.config().firebase);
 
@@ -29,7 +30,7 @@ exports.onUserCreation = functions.auth.user().onCreate(event => {
 })
 
 exports.onClaimWrite = functions.firestore.document('userClaims/{uid}').onWrite(event => {
-  const claims = event.data.data()
+  const claims = event.data.data() as UserClaims
   console.log(claims)
   return admin.auth().setCustomUserClaims(event.params.uid, claims)
 })
@@ -70,22 +71,26 @@ exports.acceptCustomerInvite = functions.https.onRequest((req, res) => {
       return {inviteDoc, userDoc}
     })
     .then(res => {
-      const invitation = res.inviteDoc.data()
-      const user = res.userDoc.data()
+      const invitation = res.inviteDoc.data() as Omit<CustomerInvitation, 'id'>
+      const user = res.userDoc.data() as Omit<UserRecord, 'uid'>
       const batch = firestore().batch()
-      batch.set(firestore().collection('userClaims').doc(uid), {
-        [`customer.${invitation.customerId}`]: {
+      const claimUpdate: UserClaims = {
+        customer: {
+          id: invitation.customerId,
           role: invitation.role,
           name: invitation.customerName, 
-        }}, { merge: true })
-      batch.update(res.inviteDoc.ref, {
+        }}
+      const invitationUpdate: Partial<CustomerInvitation> = {
         usedBy: {
           uid, userDisplayName: user.displayName
         }
-      })
-      batch.update(res.userDoc.ref, {
+      }
+      const userUpdate: Partial<UserRecord> = {
         customerId: invitation.customerId
-      })
+      }
+      batch.set(firestore().collection('userClaims').doc(uid), claimUpdate, { merge: true })
+      batch.update(res.inviteDoc.ref, invitationUpdate)
+      batch.update(res.userDoc.ref, userUpdate)
       return batch.commit()
     })
     .then(value => {

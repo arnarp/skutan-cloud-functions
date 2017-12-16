@@ -62,22 +62,25 @@ exports.acceptCustomerInvite = functions.https.onRequest(function (req, res) {
             var invitation = res.inviteDoc.data();
             var user = res.userDoc.data();
             var batch = firebase_admin_1.firestore().batch();
-            batch.set(firebase_admin_1.firestore().collection('userClaims').doc(uid), (_a = {},
-                _a["customer." + invitation.customerId] = {
+            var claimUpdate = {
+                customer: {
+                    id: invitation.customerId,
                     role: invitation.role,
                     name: invitation.customerName,
-                },
-                _a), { merge: true });
-            batch.update(res.inviteDoc.ref, {
+                }
+            };
+            var invitationUpdate = {
                 usedBy: {
                     uid: uid, userDisplayName: user.displayName
                 }
-            });
-            batch.update(res.userDoc.ref, {
+            };
+            var userUpdate = {
                 customerId: invitation.customerId
-            });
+            };
+            batch.set(firebase_admin_1.firestore().collection('userClaims').doc(uid), claimUpdate, { merge: true });
+            batch.update(res.inviteDoc.ref, invitationUpdate);
+            batch.update(res.userDoc.ref, userUpdate);
             return batch.commit();
-            var _a;
         })
             .then(function (value) {
             return res.sendStatus(200 /* Ok */);
